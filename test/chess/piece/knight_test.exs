@@ -1,9 +1,7 @@
 defmodule Chess.Piece.KnightTest do
   use ExUnit.Case
-  alias Chess.Board
-  alias Chess.Piece
+  alias Chess.{Board, GameContext, Piece, Pos}
   alias Chess.Piece.Knight
-  alias Chess.Pos
 
   describe "type" do
     test "should return :knight" do
@@ -15,7 +13,16 @@ defmodule Chess.Piece.KnightTest do
     test "should move in an L-shape from the center" do
       board = Board.from_shorthand!("8/8/8/8/3N4/8/8/8")
       pos = Pos.from_notation("d4")
-      moves = Piece.valid_moves(%Knight{}, board, nil, pos, :white)
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%Knight{}, game_context, pos)
 
       # From d4 (4, 3), moves are:
       # (2, 1) -> (6, 4) -> "e2"
@@ -47,7 +54,16 @@ defmodule Chess.Piece.KnightTest do
       # Knight at a1
       board = Board.from_shorthand!("8/8/8/8/8/8/8/N7")
       pos = Pos.from_notation("a1")
-      moves = Piece.valid_moves(%Knight{}, board, nil, pos, :white)
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%Knight{}, game_context, pos)
 
       # From a1 (7, 0):
       # (2, 1) -> Out
@@ -79,7 +95,16 @@ defmodule Chess.Piece.KnightTest do
       # White Knight at d4, white pawn at f5 (index 3, 5)
       board = Board.from_shorthand!("8/8/8/5P2/3N4/8/8/8")
       pos = Pos.from_notation("d4")
-      moves = Piece.valid_moves(%Knight{}, board, nil, pos, :white)
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%Knight{}, game_context, pos)
 
       # Total 8 moves - 1 (f5 is blocked) = 7 moves.
       assert length(moves) == 7
@@ -90,7 +115,16 @@ defmodule Chess.Piece.KnightTest do
       # White Knight at d4, black pawn at f5 (index 3, 5)
       board = Board.from_shorthand!("8/8/8/5p2/3N4/8/8/8")
       pos = Pos.from_notation("d4")
-      moves = Piece.valid_moves(%Knight{}, board, nil, pos, :white)
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%Knight{}, game_context, pos)
 
       # Total 8 moves, one of them is capturing at f5.
       assert length(moves) == 8

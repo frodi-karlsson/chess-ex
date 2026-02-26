@@ -15,13 +15,15 @@ defmodule Chess.Board do
   history of moves.
   """
   use GenServer
+  alias Chess.Board.State
+  alias Chess.GameContext
   alias Chess.Pos
 
   @doc """
   Starts a new chess game under the BoardSupervisor.
   """
   def start_game do
-    DynamicSupervisor.start_child(Chess.BoardSupervisor, {__MODULE__, []})
+    DynamicSupervisor.start_child(Chess.BoardSupervisor, {__MODULE__, State.new()})
   end
 
   @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
@@ -30,9 +32,9 @@ defmodule Chess.Board do
   end
 
   @impl true
-  @spec init(any()) :: {:ok, []}
-  def init(_args) do
-    {:ok, []}
+  @spec init(State.t()) :: {:ok, State.t()}
+  def init(%State{} = state) do
+    {:ok, state}
   end
 
   @doc """
@@ -52,31 +54,38 @@ defmodule Chess.Board do
   end
 
   @impl true
-  @spec handle_call({:move, move()} | {:history}, any(), list()) ::
-          {:reply, :ok | {:error, any()} | list(), list()}
-  def handle_call({:move, move_str}, _from, moves) do
-    {board, last_board, color} = get_current_state(moves)
+  @spec handle_call({:move, move()} | {:history}, any(), State.t()) ::
+          {:reply, :ok | {:error, any()} | list(move()), State.t()}
+  def handle_call({:move, move_str}, _from, %State{} = state) do
+    game_context = %GameContext{
+      board: state.board,
+      last_board: state.last_board,
+      moves: state.moves,
+      active_color: state.active_color,
+      moved_positions: state.moved_positions
+    }
 
-    case Chess.Notation.parse(board, last_board, color, move_str) do
-      {:ok, _} -> {:reply, :ok, moves ++ [move_str]}
-      {:error, reason} -> {:reply, {:error, reason}, moves}
+    case Chess.Notation.parse(game_context, move_str) do
+      {:ok, %{board: new_board, from: from_pos}} ->
+        new_state = %{
+          state
+          | moves: state.moves ++ [move_str],
+            board: new_board,
+            last_board: state.board,
+            active_color: Chess.opposite_color(state.active_color),
+            moved_positions: MapSet.put(state.moved_positions, from_pos)
+        }
+
+        {:reply, :ok, new_state}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
     end
   end
 
   @impl true
-  def handle_call({:history}, _from, moves) do
-    {:reply, moves, moves}
-  end
-
-  defp get_current_state(moves) do
-    Enum.reduce(moves, {initial_board(), nil, :white}, fn move_str, {board, last_board, color} ->
-      {:ok, move} = Chess.Notation.parse(board, last_board, color, move_str)
-      {move.board, board, Chess.opposite_color(color)}
-    end)
-  end
-
-  defp initial_board do
-    from_shorthand!("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+  def handle_call({:history}, _from, %State{} = state) do
+    {:reply, state.moves, state}
   end
 
   @doc """
@@ -150,31 +159,61 @@ defmodule Chess.Board do
   end
 
   @doc """
-  Returns true if the square at `pos` is attacked by any piece of `by_color`.
+  Returns true if the square at `pos` is attacked by pieces of the active color in `game_context`.
   """
-  @spec attacked?(board(), Pos.t(), Chess.color()) :: boolean()
-  def attacked?(board, pos, by_color) do
+  @spec attacked?(GameContext.t(), Pos.t()) :: boolean()
+  def attacked?(%GameContext{board: board, active_color: by_color} = game_context, pos) do
     all_pieces_with_pos(board)
     |> Enum.filter(fn {piece, _pos} -> match?({_type, ^by_color}, piece) end)
-    |> Enum.any?(fn {{type, color}, piece_pos} ->
+    |> Enum.any?(fn {{type, _}, piece_pos} ->
       piece_struct = to_piece_struct(type)
-      attacks = Chess.Piece.attacks(piece_struct, board, piece_pos, color)
+      attacks = Chess.Piece.attacks(piece_struct, game_context, piece_pos)
       pos in attacks
     end)
   end
 
   @doc """
-  Returns a list of all legal moves for the given color.
+  Returns true if the king of the current turn's color is in check.
   """
-  @spec all_legal_moves(board(), board() | nil, Chess.color()) ::
-          list(%{from: Pos.t(), to: Pos.t(), board: board()})
-  def all_legal_moves(board, last_board, color) do
+  @spec king_in_check?(GameContext.t()) :: boolean()
+  def king_in_check?(%GameContext{board: board, active_color: color} = game_context) do
+    king_pos = find_king_position(board, color)
+    opponent_context = %GameContext{game_context | active_color: Chess.opposite_color(color)}
+    king_pos && attacked?(opponent_context, king_pos)
+  end
+
+  @doc """
+  Returns true if the given move (represented as {new_board, new_pos}) is safe,
+  meaning it does not leave the king in check.
+  """
+  @spec move_safe?(GameContext.t(), Chess.Piece.new_state()) :: boolean()
+  def move_safe?(%GameContext{} = game_context, {new_board, _new_pos}) do
+    new_context = %GameContext{game_context | board: new_board}
+    !king_in_check?(new_context)
+  end
+
+  defp find_king_position(board, color) do
+    all_pieces_with_pos(board)
+    |> Enum.find_value(fn {piece, pos} ->
+      if piece == {:king, color} do
+        pos
+      else
+        nil
+      end
+    end)
+  end
+
+  @doc """
+  Returns a list of all legal moves for the active color in `game_context`.
+  """
+  @spec all_legal_moves(GameContext.t()) :: list(%{from: Pos.t(), to: Pos.t(), board: board()})
+  def all_legal_moves(%GameContext{board: board, active_color: color} = game_context) do
     all_pieces_with_pos(board)
     |> Enum.filter(fn {piece, _pos} -> match?({_type, ^color}, piece) end)
     |> Enum.flat_map(fn {{type, _}, piece_pos} ->
       piece_struct = to_piece_struct(type)
 
-      Chess.Piece.valid_moves(piece_struct, board, last_board, piece_pos, color)
+      Chess.Piece.valid_moves(piece_struct, game_context, piece_pos)
       |> Enum.map(fn {new_board, target_pos} ->
         %{from: piece_pos, to: target_pos, board: new_board, piece_type: type}
       end)

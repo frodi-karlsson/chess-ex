@@ -1,9 +1,7 @@
 defmodule Chess.Piece.RookTest do
   use ExUnit.Case
-  alias Chess.Board
-  alias Chess.Piece
+  alias Chess.{Board, GameContext, Piece, Pos}
   alias Chess.Piece.Rook
-  alias Chess.Pos
 
   describe "type" do
     test "should return :rook" do
@@ -15,7 +13,16 @@ defmodule Chess.Piece.RookTest do
     test "should move along rank and file" do
       board = Board.from_shorthand!("8/8/8/8/3R4/8/8/8")
       pos = Pos.from_notation("d4")
-      moves = Piece.valid_moves(%Rook{}, board, nil, pos, :white)
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%Rook{}, game_context, pos)
 
       # d4 is {4, 3}
       # Up: d5, d6, d7, d8 (ranks 3, 2, 1, 0)
@@ -30,7 +37,16 @@ defmodule Chess.Piece.RookTest do
     test "should be blocked by own pieces" do
       board = Board.from_shorthand!("8/8/8/3P4/3R4/8/8/8")
       pos = Pos.from_notation("d4")
-      moves = Piece.valid_moves(%Rook{}, board, nil, pos, :white)
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%Rook{}, game_context, pos)
 
       # Blocked at d5 (rank 3, index 3).
       # d5 is occupied by white pawn, so d5 is NOT a valid move.
@@ -48,7 +64,16 @@ defmodule Chess.Piece.RookTest do
     test "should capture opponent pieces and stop" do
       board = Board.from_shorthand!("8/8/8/3p4/3R4/8/8/8")
       pos = Pos.from_notation("d4")
-      moves = Piece.valid_moves(%Rook{}, board, nil, pos, :white)
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%Rook{}, game_context, pos)
 
       # d5 is black pawn. Rook can capture d5 but cannot go further (d6, d7, d8).
       # Up: d5 (1)

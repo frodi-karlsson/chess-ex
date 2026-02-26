@@ -6,11 +6,15 @@ defmodule Chess.Piece.Knight do
   - Can jump over other pieces.
   - Captures by occupying the square of an opponent's piece.
   """
-  alias Chess.{Board, Piece, Pos}
+  alias Chess.{Board, GameContext, Piece, Pos}
   defstruct []
 
   defimpl Piece do
-    def valid_moves(%Chess.Piece.Knight{}, board, _last_board, pos, color) do
+    def valid_moves(
+          %Chess.Piece.Knight{},
+          %GameContext{board: board, active_color: color} = game_context,
+          pos
+        ) do
       # L-shape offsets
       offsets = [
         {2, 1},
@@ -35,11 +39,12 @@ defmodule Chess.Piece.Knight do
       |> Enum.map(fn target_pos ->
         Board.as_unsafe_moved(board, pos, target_pos, {:knight, color})
       end)
+      |> Enum.filter(&Board.move_safe?(game_context, &1))
     end
 
     def type(_piece), do: :knight
 
-    def attacks(_piece, _board, pos, _color) do
+    def attacks(_piece, %GameContext{active_color: _color}, pos) do
       # L-shape offsets
       offsets = [
         {2, 1},

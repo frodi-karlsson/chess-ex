@@ -1,9 +1,7 @@
 defmodule Chess.Piece.QueenTest do
   use ExUnit.Case
-  alias Chess.Board
-  alias Chess.Piece
+  alias Chess.{Board, GameContext, Piece, Pos}
   alias Chess.Piece.Queen
-  alias Chess.Pos
 
   describe "type" do
     test "should return :queen" do
@@ -15,7 +13,16 @@ defmodule Chess.Piece.QueenTest do
     test "should move along rank, file, and diagonals" do
       board = Board.from_shorthand!("8/8/8/8/3Q4/8/8/8")
       pos = Pos.from_notation("d4")
-      moves = Piece.valid_moves(%Queen{}, board, nil, pos, :white)
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%Queen{}, game_context, pos)
 
       # d4 is {4, 3}
       # Orthogonal (Rook-like): 14 moves
@@ -29,7 +36,16 @@ defmodule Chess.Piece.QueenTest do
       # Block d5 (Up) and e5 (Up-Right)
       board = Board.from_shorthand!("8/8/8/3PP3/3Q4/8/8/8")
       pos = Pos.from_notation("d4")
-      moves = Piece.valid_moves(%Queen{}, board, nil, pos, :white)
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%Queen{}, game_context, pos)
 
       # Total 27 - (4 Up) - (4 Up-Right) = 19
       assert length(moves) == 19
@@ -41,7 +57,16 @@ defmodule Chess.Piece.QueenTest do
       # d4 Queen, black pawn at f6 (Up-Right) and d6 (Up)
       board = Board.from_shorthand!("8/8/3p1p2/8/3Q4/8/8/8")
       pos = Pos.from_notation("d4")
-      moves = Piece.valid_moves(%Queen{}, board, nil, pos, :white)
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%Queen{}, game_context, pos)
 
       # Orthogonal:
       # Up: d5, d6 (2)

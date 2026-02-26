@@ -6,11 +6,15 @@ defmodule Chess.Piece.Queen do
   - Cannot jump over other pieces.
   - Captures by occupying the square of an opponent's piece.
   """
-  alias Chess.{Board, Piece, Pos}
+  alias Chess.{Board, GameContext, Piece, Pos}
   defstruct []
 
   defimpl Piece do
-    def valid_moves(%Chess.Piece.Queen{}, board, _last_board, pos, color) do
+    def valid_moves(
+          %Chess.Piece.Queen{},
+          %GameContext{board: board, active_color: color} = game_context,
+          pos
+        ) do
       # directions: 4 orthogonal + 4 diagonal
       directions = [
         {1, 0},
@@ -26,6 +30,7 @@ defmodule Chess.Piece.Queen do
       Enum.flat_map(directions, fn {dr, df} ->
         slide(board, pos, pos, dr, df, color, [])
       end)
+      |> Enum.filter(&Board.move_safe?(game_context, &1))
     end
 
     defp slide(board, original_pos, current_pos, dr, df, color, acc) do
@@ -51,7 +56,7 @@ defmodule Chess.Piece.Queen do
 
     def type(_piece), do: :queen
 
-    def attacks(_piece, board, pos, color) do
+    def attacks(_piece, %GameContext{board: board, active_color: color}, pos) do
       # directions: 4 orthogonal + 4 diagonal
       directions = [
         {1, 0},

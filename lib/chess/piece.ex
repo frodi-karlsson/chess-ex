@@ -1,4 +1,4 @@
-alias Chess.{Board, Pos}
+alias Chess.{Board, GameContext, Pos}
 
 defprotocol Chess.Piece do
   @moduledoc """
@@ -14,16 +14,13 @@ defprotocol Chess.Piece do
   @doc """
   Returns a list of valid future board states that can be reached
   by moving the given piece on the given board.
-  board.
   """
   @spec valid_moves(
           piece :: any(),
-          board :: Board.board(),
-          last_board :: Board.board() | nil,
-          pos :: Pos.t(),
-          color :: Chess.color()
+          game_context :: GameContext.t(),
+          pos :: Pos.t()
         ) :: list(new_state())
-  def valid_moves(piece, board, last_board, pos, color)
+  def valid_moves(piece, game_context, pos)
 
   @doc """
   Returns a list of squares that the given piece is attacking from the given position.
@@ -31,11 +28,10 @@ defprotocol Chess.Piece do
   """
   @spec attacks(
           piece :: any(),
-          board :: Board.board(),
-          pos :: Pos.t(),
-          color :: Chess.color()
+          game_context :: GameContext.t(),
+          pos :: Pos.t()
         ) :: list(Pos.t())
-  def attacks(piece, board, pos, color)
+  def attacks(piece, game_context, pos)
 
   @doc """
   Returns the type of the piece, e.g. :pawn, :rook, :knight, etc.

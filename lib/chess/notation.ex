@@ -2,15 +2,14 @@ defmodule Chess.Notation do
   @moduledoc """
   Parses Standard Algebraic Notation (SAN) moves.
   """
-  alias Chess.Board
-  alias Chess.Pos
+  alias Chess.{Board, GameContext, Pos}
 
   @doc """
   Parses a SAN move string and returns the matching legal move.
   Returns {:ok, move} or {:error, reason}.
   """
-  def parse(board, last_board, color, move_str) do
-    all_moves = Board.all_legal_moves(board, last_board, color)
+  def parse(%GameContext{} = game_context, move_str) do
+    all_moves = Board.all_legal_moves(game_context)
 
     case match_move(move_str, all_moves) do
       nil -> {:error, "Invalid or ambiguous move: #{move_str}"}

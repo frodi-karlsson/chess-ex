@@ -7,26 +7,39 @@ defmodule Chess.Piece.Pawn do
    - When a pawn reaches the opposite end of the board, it can be promoted to any other piece (except a king).
    - En passant: a special capture that can occur immediately after a pawn moves two squares forward from its starting position, and an opponent's pawn could have captured it had it moved only one square forward.
   """
-  alias Chess.{Board, Piece, Pos}
+  alias Chess.{Board, GameContext, Piece, Pos}
   defstruct []
 
   defimpl Piece do
-    def valid_moves(%Chess.Piece.Pawn{}, board, last_board, pos, color) do
-      forward_moves(board, pos, color) ++
-        capture_moves(board, pos, color) ++
-        promotion_moves(board, pos, color) ++
-        en_passant_moves(board, last_board, pos, color)
+    def valid_moves(
+          %Chess.Piece.Pawn{},
+          %GameContext{board: board, last_board: last_board, active_color: color} = game_context,
+          pos
+        ) do
+      (forward_moves(board, pos, color) ++
+         capture_moves(board, pos, color) ++
+         promotion_moves(board, pos, color) ++
+         en_passant_moves(board, last_board, pos, color))
+      |> Enum.filter(&Board.move_safe?(game_context, &1))
     end
 
     defp en_passant_moves(board, last_board, pos, color) do
       left_opponent_pawn_pos = Pos.get_plus(pos, 0, -1, color)
       right_opponent_pawn_pos = Pos.get_plus(pos, 0, 1, color)
 
+      opponent_color = Chess.opposite_color(color)
+      opponent_starting_rank = if opponent_color == :white, do: 6, else: 1
+
       [left_opponent_pawn_pos, right_opponent_pawn_pos]
       |> Enum.filter(fn opponent_pos ->
+        # 1. Opponent pawn is currently at opponent_pos
+        # 2. Opponent pawn was NOT at opponent_pos in last_board
+        # 3. Opponent pawn WAS at its starting rank in last_board (meaning it double-stepped)
         opponent_pos &&
-          Board.get_piece(board, opponent_pos) == {:pawn, Chess.opposite_color(color)} &&
-          last_board && Board.get_piece(last_board, opponent_pos) == nil
+          Board.get_piece(board, opponent_pos) == {:pawn, opponent_color} &&
+          last_board && Board.get_piece(last_board, opponent_pos) == nil &&
+          Board.get_piece(last_board, Pos.new(opponent_starting_rank, opponent_pos.file)) ==
+            {:pawn, opponent_color}
       end)
       |> Enum.map(fn opponent_pos ->
         capture_pos = Pos.get_plus(opponent_pos, 1, 0, color)
@@ -111,11 +124,9 @@ defmodule Chess.Piece.Pawn do
       end
     end
 
-    def type(_piece) do
-      :pawn
-    end
+    def type(_piece), do: :pawn
 
-    def attacks(_piece, _board, pos, color) do
+    def attacks(_piece, %GameContext{active_color: color}, pos) do
       left_capture = Pos.get_plus(pos, 1, -1, color)
       right_capture = Pos.get_plus(pos, 1, 1, color)
 

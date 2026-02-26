@@ -1,9 +1,7 @@
 defmodule Chess.Piece.KingTest do
   use ExUnit.Case
-  alias Chess.Board
-  alias Chess.Piece
+  alias Chess.{Board, GameContext, Piece, Pos}
   alias Chess.Piece.King
-  alias Chess.Pos
 
   describe "type" do
     test "should return :king" do
@@ -15,7 +13,16 @@ defmodule Chess.Piece.KingTest do
     test "should move one square in any direction" do
       board = Board.from_shorthand!("8/8/8/8/3K4/8/8/8")
       pos = Pos.from_notation("d4")
-      moves = Piece.valid_moves(%King{}, board, nil, pos, :white)
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%King{}, game_context, pos)
 
       # Neighbors: d5, d3, c4, e4, c5, e5, c3, e3
       assert length(moves) == 8
@@ -43,7 +50,16 @@ defmodule Chess.Piece.KingTest do
 
       board = Board.from_shorthand!("8/8/4p3/8/3K4/8/8/8")
       pos = Pos.from_notation("d4")
-      moves = Piece.valid_moves(%King{}, board, nil, pos, :white)
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%King{}, game_context, pos)
 
       assert length(moves) == 7
       refute Enum.any?(moves, fn {_, p} -> p == Pos.from_notation("d5") end)
@@ -53,7 +69,16 @@ defmodule Chess.Piece.KingTest do
       # King at d4, black rook at d8 attacks the whole d-file.
       board = Board.from_shorthand!("3r4/8/8/8/3K4/8/8/8")
       pos = Pos.from_notation("d4")
-      moves = Piece.valid_moves(%King{}, board, nil, pos, :white)
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%King{}, game_context, pos)
 
       # Neighbors of d4: d5, d3, c4, e4, c5, e5, c3, e3.
       # d5 and d3 are on the d-file, so they are attacked.
@@ -67,7 +92,16 @@ defmodule Chess.Piece.KingTest do
       # King at d4, black pawn at d5. Pawn is NOT protected.
       board = Board.from_shorthand!("8/8/8/3p4/3K4/8/8/8")
       pos = Pos.from_notation("d4")
-      moves = Piece.valid_moves(%King{}, board, nil, pos, :white)
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%King{}, game_context, pos)
 
       # King can capture d5.
       assert Enum.any?(moves, fn {_, p} -> p == Pos.from_notation("d5") end)
@@ -77,10 +111,100 @@ defmodule Chess.Piece.KingTest do
       # King at d4, black pawn at d5, protected by black pawn at e6.
       board = Board.from_shorthand!("8/8/4p3/3p4/3K4/8/8/8")
       pos = Pos.from_notation("d4")
-      moves = Piece.valid_moves(%King{}, board, nil, pos, :white)
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%King{}, game_context, pos)
 
       # King cannot capture d5 because it's attacked by e6.
       refute Enum.any?(moves, fn {_, p} -> p == Pos.from_notation("d5") end)
+    end
+
+    test "should allow kingside castling when valid" do
+      # White King at e1, White Rook at h1, path clear
+      board = Board.from_shorthand!("8/8/8/8/8/8/8/4K2R")
+      pos = Pos.from_notation("e1")
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%King{}, game_context, pos)
+
+      # Should have O-O (g1)
+      assert Enum.any?(moves, fn {_, p} -> p == Pos.from_notation("g1") end)
+
+      {new_board, _} = Enum.find(moves, fn {_, p} -> p == Pos.from_notation("g1") end)
+      assert Board.get_piece(new_board, Pos.from_notation("g1")) == {:king, :white}
+      assert Board.get_piece(new_board, Pos.from_notation("f1")) == {:rook, :white}
+    end
+
+    test "should allow queenside castling when valid" do
+      # White King at e1, White Rook at a1, path clear
+      board = Board.from_shorthand!("8/8/8/8/8/8/8/R3K3")
+      pos = Pos.from_notation("e1")
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%King{}, game_context, pos)
+
+      # Should have O-O-O (c1)
+      assert Enum.any?(moves, fn {_, p} -> p == Pos.from_notation("c1") end)
+
+      {new_board, _} = Enum.find(moves, fn {_, p} -> p == Pos.from_notation("c1") end)
+      assert Board.get_piece(new_board, Pos.from_notation("c1")) == {:king, :white}
+      assert Board.get_piece(new_board, Pos.from_notation("d1")) == {:rook, :white}
+    end
+
+    test "should NOT allow castling if path is blocked" do
+      # White King at e1, White Rook at h1, Bishop at f1
+      board = Board.from_shorthand!("8/8/8/8/8/8/8/4KB1R")
+      pos = Pos.from_notation("e1")
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: [],
+        active_color: :white,
+        moved_positions: MapSet.new()
+      }
+
+      moves = Piece.valid_moves(%King{}, game_context, pos)
+
+      refute Enum.any?(moves, fn {_, p} -> p == Pos.from_notation("g1") end)
+    end
+
+    test "should NOT allow castling if king has moved" do
+      board = Board.from_shorthand!("8/8/8/8/8/8/8/4K2R")
+      pos = Pos.from_notation("e1")
+
+      game_context = %GameContext{
+        board: board,
+        last_board: nil,
+        moves: ["Kf1", "Ke1"],
+        active_color: :white,
+        moved_positions: MapSet.new([Pos.from_notation("e1")])
+      }
+
+      moves = Piece.valid_moves(%King{}, game_context, pos)
+
+      refute Enum.any?(moves, fn {_, p} -> p == Pos.from_notation("g1") end)
     end
   end
 end
