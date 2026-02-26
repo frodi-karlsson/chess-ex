@@ -17,10 +17,38 @@ defmodule Chess.Board do
   use GenServer
   alias Chess.Pos
 
+  @doc """
+  Starts a new chess game under the BoardSupervisor.
+  """
+  def start_game do
+    DynamicSupervisor.start_child(Chess.BoardSupervisor, {__MODULE__, []})
+  end
+
+  @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts)
+  end
+
   @impl true
   @spec init(any()) :: {:ok, []}
   def init(_args) do
     {:ok, []}
+  end
+
+  @doc """
+  Makes a move on the board.
+  """
+  @spec move(pid(), move()) :: :ok | {:error, any()}
+  def move(pid, move_str) do
+    GenServer.call(pid, {:move, move_str})
+  end
+
+  @doc """
+  Returns the move history of the board.
+  """
+  @spec history(pid()) :: list(move())
+  def history(pid) do
+    GenServer.call(pid, {:history})
   end
 
   @impl true

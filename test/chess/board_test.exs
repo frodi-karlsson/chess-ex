@@ -8,26 +8,42 @@ defmodule Chess.BoardTest do
 
   describe "handle_call {:move, move}" do
     test "should handle valid move" do
-      {:ok, pid} = GenServer.start_link(Board, nil)
-      assert GenServer.call(pid, {:move, "e4"}) == :ok
-      assert GenServer.call(pid, {:move, "e5"}) == :ok
+      {:ok, pid} = Board.start_game()
+      assert Board.move(pid, "e4") == :ok
+      assert Board.move(pid, "e5") == :ok
     end
 
     test "should return error for invalid move" do
-      {:ok, pid} = GenServer.start_link(Board, nil)
+      {:ok, pid} = Board.start_game()
       # Black move first
-      assert {:error, _} = GenServer.call(pid, {:move, "e5"})
+      assert {:error, _} = Board.move(pid, "e5")
       # King can't jump to e4
-      assert {:error, _} = GenServer.call(pid, {:move, "Ke4"})
+      assert {:error, _} = Board.move(pid, "Ke4")
+    end
+  end
+
+  describe "move/2 client function" do
+    test "should handle valid move" do
+      {:ok, pid} = Board.start_game()
+      assert Board.move(pid, "e4") == :ok
+      assert Board.move(pid, "e5") == :ok
+    end
+
+    test "should return error for invalid move" do
+      {:ok, pid} = Board.start_game()
+      # Black moves first
+      assert {:error, _} = Board.move(pid, "e5")
+      # King can't jump to e4
+      assert {:error, _} = Board.move(pid, "Ke4")
     end
   end
 
   describe "handle_call {:history}" do
     test "should return the current history of the board" do
-      {:ok, pid} = GenServer.start_link(Board, nil)
-      GenServer.call(pid, {:move, "e4"})
-      GenServer.call(pid, {:move, "e5"})
-      assert GenServer.call(pid, {:history}) == ["e4", "e5"]
+      {:ok, pid} = Board.start_game()
+      Board.move(pid, "e4")
+      Board.move(pid, "e5")
+      assert Board.history(pid) == ["e4", "e5"]
     end
   end
 
