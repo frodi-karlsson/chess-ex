@@ -14,13 +14,7 @@ defmodule Chess.Piece.KnightTest do
       board = Board.from_shorthand!("8/8/8/8/3N4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%Knight{}, game_context, pos)
 
@@ -55,13 +49,7 @@ defmodule Chess.Piece.KnightTest do
       board = Board.from_shorthand!("8/8/8/8/8/8/8/N7")
       pos = Pos.from_notation("a1")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%Knight{}, game_context, pos)
 
@@ -96,13 +84,7 @@ defmodule Chess.Piece.KnightTest do
       board = Board.from_shorthand!("8/8/8/5P2/3N4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%Knight{}, game_context, pos)
 
@@ -116,13 +98,7 @@ defmodule Chess.Piece.KnightTest do
       board = Board.from_shorthand!("8/8/8/5p2/3N4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%Knight{}, game_context, pos)
 

@@ -14,13 +14,7 @@ defmodule Chess.Piece.RookTest do
       board = Board.from_shorthand!("8/8/8/8/3R4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%Rook{}, game_context, pos)
 
@@ -38,13 +32,7 @@ defmodule Chess.Piece.RookTest do
       board = Board.from_shorthand!("8/8/8/3P4/3R4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%Rook{}, game_context, pos)
 
@@ -65,13 +53,7 @@ defmodule Chess.Piece.RookTest do
       board = Board.from_shorthand!("8/8/8/3p4/3R4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%Rook{}, game_context, pos)
 

@@ -14,13 +14,7 @@ defmodule Chess.Piece.QueenTest do
       board = Board.from_shorthand!("8/8/8/8/3Q4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%Queen{}, game_context, pos)
 
@@ -37,13 +31,7 @@ defmodule Chess.Piece.QueenTest do
       board = Board.from_shorthand!("8/8/8/3PP3/3Q4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%Queen{}, game_context, pos)
 
@@ -58,13 +46,7 @@ defmodule Chess.Piece.QueenTest do
       board = Board.from_shorthand!("8/8/3p1p2/8/3Q4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%Queen{}, game_context, pos)
 

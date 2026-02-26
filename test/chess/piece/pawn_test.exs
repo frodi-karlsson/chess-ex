@@ -85,13 +85,12 @@ defmodule Chess.Piece.PawnTest do
 
     for {description, board, last_board, from, color, expected_moves} <- @cases do
       test "should return valid moves for #{description}" do
-        game_context = %GameContext{
-          board: unquote(Macro.escape(board)),
-          last_board: unquote(Macro.escape(last_board)),
-          moves: [],
-          active_color: unquote(color),
-          moved_positions: MapSet.new()
-        }
+        game_context =
+          GameContext.new(
+            board: unquote(Macro.escape(board)),
+            last_board: unquote(Macro.escape(last_board)),
+            active_color: unquote(color)
+          )
 
         assert Piece.valid_moves(
                  %Pawn{},

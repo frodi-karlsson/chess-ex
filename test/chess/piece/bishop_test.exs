@@ -14,13 +14,7 @@ defmodule Chess.Piece.BishopTest do
       board = Board.from_shorthand!("8/8/8/8/3B4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%Bishop{}, game_context, pos)
 
@@ -40,13 +34,7 @@ defmodule Chess.Piece.BishopTest do
       board = Board.from_shorthand!("8/8/8/4P3/3B4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%Bishop{}, game_context, pos)
 
@@ -66,13 +54,7 @@ defmodule Chess.Piece.BishopTest do
       board = Board.from_shorthand!("8/8/5p2/8/3B4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%Bishop{}, game_context, pos)
 

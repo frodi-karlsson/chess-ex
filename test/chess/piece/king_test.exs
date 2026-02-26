@@ -14,13 +14,7 @@ defmodule Chess.Piece.KingTest do
       board = Board.from_shorthand!("8/8/8/8/3K4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%King{}, game_context, pos)
 
@@ -51,13 +45,7 @@ defmodule Chess.Piece.KingTest do
       board = Board.from_shorthand!("8/8/4p3/8/3K4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%King{}, game_context, pos)
 
@@ -70,13 +58,7 @@ defmodule Chess.Piece.KingTest do
       board = Board.from_shorthand!("3r4/8/8/8/3K4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%King{}, game_context, pos)
 
@@ -93,13 +75,7 @@ defmodule Chess.Piece.KingTest do
       board = Board.from_shorthand!("8/8/8/3p4/3K4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%King{}, game_context, pos)
 
@@ -112,13 +88,7 @@ defmodule Chess.Piece.KingTest do
       board = Board.from_shorthand!("8/8/4p3/3p4/3K4/8/8/8")
       pos = Pos.from_notation("d4")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%King{}, game_context, pos)
 
@@ -131,13 +101,7 @@ defmodule Chess.Piece.KingTest do
       board = Board.from_shorthand!("8/8/8/8/8/8/8/4K2R")
       pos = Pos.from_notation("e1")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%King{}, game_context, pos)
 
@@ -154,13 +118,7 @@ defmodule Chess.Piece.KingTest do
       board = Board.from_shorthand!("8/8/8/8/8/8/8/R3K3")
       pos = Pos.from_notation("e1")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%King{}, game_context, pos)
 
@@ -177,13 +135,7 @@ defmodule Chess.Piece.KingTest do
       board = Board.from_shorthand!("8/8/8/8/8/8/8/4KB1R")
       pos = Pos.from_notation("e1")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: [],
-        active_color: :white,
-        moved_positions: MapSet.new()
-      }
+      game_context = GameContext.new(board: board)
 
       moves = Piece.valid_moves(%King{}, game_context, pos)
 
@@ -194,13 +146,12 @@ defmodule Chess.Piece.KingTest do
       board = Board.from_shorthand!("8/8/8/8/8/8/8/4K2R")
       pos = Pos.from_notation("e1")
 
-      game_context = %GameContext{
-        board: board,
-        last_board: nil,
-        moves: ["Kf1", "Ke1"],
-        active_color: :white,
-        moved_positions: MapSet.new([Pos.from_notation("e1")])
-      }
+      game_context =
+        GameContext.new(
+          board: board,
+          moves: ["Kf1", "Ke1"],
+          moved_positions: MapSet.new([Pos.from_notation("e1")])
+        )
 
       moves = Piece.valid_moves(%King{}, game_context, pos)
 
