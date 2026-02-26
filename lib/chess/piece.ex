@@ -1,4 +1,4 @@
-alias Chess.Board
+alias Chess.{Board, Pos}
 
 defprotocol Chess.Piece do
   @moduledoc """
@@ -9,7 +9,7 @@ defprotocol Chess.Piece do
   way we can reason about them in a polymorphic way.
   """
 
-  @type new_state :: {Board.board(), %Chess.Pos{}}
+  @type new_state :: {Board.board(), Pos.t()}
 
   @doc """
   Returns a list of valid future board states that can be reached
@@ -20,10 +20,22 @@ defprotocol Chess.Piece do
           piece :: any(),
           board :: Board.board(),
           last_board :: Board.board() | nil,
-          pos :: %Chess.Pos{},
+          pos :: Pos.t(),
           color :: Chess.color()
         ) :: list(new_state())
   def valid_moves(piece, board, last_board, pos, color)
+
+  @doc """
+  Returns a list of squares that the given piece is attacking from the given position.
+  This is used for check detection and King movement.
+  """
+  @spec attacks(
+          piece :: any(),
+          board :: Board.board(),
+          pos :: Pos.t(),
+          color :: Chess.color()
+        ) :: list(Pos.t())
+  def attacks(piece, board, pos, color)
 
   @doc """
   Returns the type of the piece, e.g. :pawn, :rook, :knight, etc.

@@ -36,7 +36,7 @@ defmodule Chess.PosTest do
       pos = Pos.new(0, 0)
       assert Pos.get_plus(pos, 1, 0, :white) == nil
       assert Pos.get_plus(pos, 0, -1, :white) == nil
-      
+
       pos_black = Pos.new(7, 7)
       assert Pos.get_plus(pos_black, 1, 0, :black) == nil
       assert Pos.get_plus(pos_black, 0, 1, :black) == nil

@@ -2,6 +2,8 @@ alias Chess.Board
 
 defmodule Chess.BoardTest do
   use ExUnit.Case
+  alias Chess.Board
+  alias Chess.Pos
   doctest Board
 
   describe "handle_call {:move, move}" do
@@ -9,6 +11,14 @@ defmodule Chess.BoardTest do
       {:ok, pid} = GenServer.start_link(Board, nil)
       assert GenServer.call(pid, {:move, "e4"}) == :ok
       assert GenServer.call(pid, {:move, "e5"}) == :ok
+    end
+
+    test "should return error for invalid move" do
+      {:ok, pid} = GenServer.start_link(Board, nil)
+      # Black move first
+      assert {:error, _} = GenServer.call(pid, {:move, "e5"})
+      # King can't jump to e4
+      assert {:error, _} = GenServer.call(pid, {:move, "Ke4"})
     end
   end
 
@@ -27,14 +37,50 @@ defmodule Chess.BoardTest do
         "initial position",
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
         [
-          [{:rook, :black}, {:knight, :black}, {:bishop, :black}, {:queen, :black}, {:king, :black}, {:bishop, :black}, {:knight, :black}, {:rook, :black}],
-          [{:pawn, :black}, {:pawn, :black}, {:pawn, :black}, {:pawn, :black}, {:pawn, :black}, {:pawn, :black}, {:pawn, :black}, {:pawn, :black}],
+          [
+            {:rook, :black},
+            {:knight, :black},
+            {:bishop, :black},
+            {:queen, :black},
+            {:king, :black},
+            {:bishop, :black},
+            {:knight, :black},
+            {:rook, :black}
+          ],
+          [
+            {:pawn, :black},
+            {:pawn, :black},
+            {:pawn, :black},
+            {:pawn, :black},
+            {:pawn, :black},
+            {:pawn, :black},
+            {:pawn, :black},
+            {:pawn, :black}
+          ],
           [nil, nil, nil, nil, nil, nil, nil, nil],
           [nil, nil, nil, nil, nil, nil, nil, nil],
           [nil, nil, nil, nil, nil, nil, nil, nil],
           [nil, nil, nil, nil, nil, nil, nil, nil],
-          [{:pawn, :white}, {:pawn, :white}, {:pawn, :white}, {:pawn, :white}, {:pawn, :white}, {:pawn, :white}, {:pawn, :white}, {:pawn, :white}],
-          [{:rook, :white}, {:knight, :white}, {:bishop, :white}, {:queen, :white}, {:king, :white}, {:bishop, :white}, {:knight, :white}, {:rook, :white}]
+          [
+            {:pawn, :white},
+            {:pawn, :white},
+            {:pawn, :white},
+            {:pawn, :white},
+            {:pawn, :white},
+            {:pawn, :white},
+            {:pawn, :white},
+            {:pawn, :white}
+          ],
+          [
+            {:rook, :white},
+            {:knight, :white},
+            {:bishop, :white},
+            {:queen, :white},
+            {:king, :white},
+            {:bishop, :white},
+            {:knight, :white},
+            {:rook, :white}
+          ]
         ]
       },
       {
@@ -75,51 +121,17 @@ defmodule Chess.BoardTest do
   end
 
   describe "get_piece" do
-    test "should return the piece at the given position (0-indexed)" do
-      board = [
-        [nil, nil, nil, nil, nil, nil, nil, nil],
-        [nil, nil, nil, nil, {:pawn, :white}, nil, nil, nil],
-        [nil, nil, nil, nil, nil, nil, nil, nil],
-        [nil, nil, nil, nil, {:pawn, :black}, nil, nil, nil],
-        [nil, nil, nil, nil, nil, nil, nil, nil],
-        [nil, nil, nil, nil, nil, nil, nil, nil],
-        [
-          nil,
-          nil,
-          nil,
-          nil,
-          nil,
-          nil,
-          nil,
-          nil
-        ]
-      ]
+    test "should return the piece at the given position" do
+      board = Board.from_shorthand!("8/4P3/8/4p3/8/8/8/8")
 
-      assert Board.get_piece(board, %Chess.Pos{rank: 3, file: 4}) == {:pawn, :black}
-      assert Board.get_piece(board, %Chess.Pos{rank: 1, file: 4}) == {:pawn, :white}
+      assert Board.get_piece(board, Pos.from_notation("e5")) == {:pawn, :black}
+      assert Board.get_piece(board, Pos.from_notation("e7")) == {:pawn, :white}
     end
 
     test "should return nil if there is no piece at the given position" do
-      board = [
-        [nil, nil, nil, nil, nil, nil, nil, nil],
-        [nil, nil, nil, nil, {:pawn, :white}, nil, nil, nil],
-        [nil, nil, nil, nil, nil, nil, nil, nil],
-        [nil, nil, nil, nil, {:pawn, :black}, nil, nil, nil],
-        [nil, nil, nil, nil, nil, nil, nil, nil],
-        [nil, nil, nil, nil, nil, nil, nil, nil],
-        [
-          nil,
-          nil,
-          nil,
-          nil,
-          nil,
-          nil,
-          nil,
-          nil
-        ]
-      ]
+      board = Board.from_shorthand!("8/4P3/8/4p3/8/8/8/8")
 
-      assert Board.get_piece(board, %Chess.Pos{rank: 0, file: 0}) == nil
+      assert Board.get_piece(board, Pos.from_notation("a1")) == nil
     end
   end
 
@@ -127,172 +139,49 @@ defmodule Chess.BoardTest do
     @cases [
       {
         "white doing simple forward",
-        [
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, {:pawn, :white}, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [
-            nil,
-            nil,
-            nil,
-            {:pawn, :black},
-            {:pawn, :black},
-            {:pawn, :black},
-            {:pawn, :black},
-            {:pawn, :black}
-          ],
-          [
-            nil,
-            {:rook, :black},
-            {:knight, :black},
-            {:bishop, :black},
-            {:queen, :black},
-            {:king, :black},
-            {:bishop, :black},
-            {:knight, :black}
-          ]
-        ],
-        %Chess.Pos{rank: 1, file: 4},
-        %Chess.Pos{rank: 2, file: 4},
+        "8/4P3/8/8/8/8/3ppppp/1rnbqkbn",
+        Pos.from_notation("e7"),
+        Pos.from_notation("e6"),
         {:pawn, :white},
-        [
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, {:pawn, :white}, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [
-            nil,
-            nil,
-            nil,
-            {:pawn, :black},
-            {:pawn, :black},
-            {:pawn, :black},
-            {:pawn, :black},
-            {:pawn, :black}
-          ],
-          [
-            nil,
-            {:rook, :black},
-            {:knight, :black},
-            {:bishop, :black},
-            {:queen, :black},
-            {:king, :black},
-            {:bishop, :black},
-            {:knight, :black}
-          ]
-        ]
+        "8/8/4P3/8/8/8/3ppppp/1rnbqkbn"
       },
       {
         "white promotion",
-        [
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, {:pawn, :white}, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [
-            nil,
-            nil,
-            nil,
-            nil,
-            {:pawn, :black},
-            {:pawn, :black},
-            {:pawn, :black},
-            {:pawn, :black}
-          ],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil]
-        ],
-        %Chess.Pos{rank: 1, file: 4},
-        %Chess.Pos{rank: 0, file: 4},
+        "8/4P3/8/8/8/4pppp/8/8",
+        Pos.from_notation("e7"),
+        Pos.from_notation("e8"),
         {:queen, :white},
-        [
-          [nil, nil, nil, nil, {:queen, :white}, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [
-            nil,
-            nil,
-            nil,
-            nil,
-            {:pawn, :black},
-            {:pawn, :black},
-            {:pawn, :black},
-            {:pawn, :black}
-          ],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil]
-        ]
+        "4Q3/8/8/8/8/4pppp/8/8"
       },
       {
         "black doing simple forward",
-        [
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, {:pawn, :white}, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, {:pawn, :black}, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil]
-        ],
-        %Chess.Pos{rank: 6, file: 4},
-        %Chess.Pos{rank: 5, file: 4},
+        "8/4P3/8/8/8/8/4p3/8",
+        Pos.from_notation("e2"),
+        Pos.from_notation("e1"),
         {:pawn, :black},
-        [
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, {:pawn, :white}, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, {:pawn, :black}, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil]
-        ]
+        "8/4P3/8/8/8/8/8/4p3"
       },
       {
         "black promotion",
-        [
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, {:pawn, :black}, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil]
-        ],
-        %Chess.Pos{rank: 6, file: 4},
-        %Chess.Pos{rank: 7, file: 4},
+        "8/8/8/8/8/8/4p3/8",
+        Pos.from_notation("e2"),
+        Pos.from_notation("e1"),
         {:queen, :black},
-        [
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, nil, nil, nil, nil],
-          [nil, nil, nil, nil, {:queen, :black}, nil, nil, nil]
-        ]
+        "8/8/8/8/8/8/8/4q3"
       }
     ]
 
-    for {description, board, from, to, new_piece, expected_board} <- @cases do
+    for {description, board_shorthand, from, to, new_piece, expected_shorthand} <- @cases do
       test "should move piece correctly for #{description}" do
+        board = Board.from_shorthand!(unquote(board_shorthand))
+        expected_board = Board.from_shorthand!(unquote(expected_shorthand))
+
         assert Board.as_unsafe_moved(
-                 unquote(Macro.escape(board)),
+                 board,
                  unquote(Macro.escape(from)),
                  unquote(Macro.escape(to)),
                  unquote(Macro.escape(new_piece))
-               ) == {unquote(Macro.escape(expected_board)), unquote(Macro.escape(to))}
+               ) == {expected_board, unquote(Macro.escape(to))}
       end
     end
   end

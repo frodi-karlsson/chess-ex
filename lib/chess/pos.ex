@@ -7,6 +7,7 @@ defmodule Chess.Pos do
   (e.g., a1 is {0, 0}, h8 is {7, 7}).
   """
 
+  @type t :: %__MODULE__{rank: 0..7, file: 0..7}
   defstruct [:rank, :file]
 
   @doc """
@@ -14,7 +15,7 @@ defmodule Chess.Pos do
 
   On invalid input (rank or file not between 0 and 7), it raises an ArgumentError.
   """
-  @spec new(rank :: integer(), file :: integer()) :: %Chess.Pos{}
+  @spec new(rank :: integer(), file :: integer()) :: t()
   def new(rank, file) when rank in 0..7 and file in 0..7 do
     %Chess.Pos{rank: rank, file: file}
   end
@@ -29,7 +30,7 @@ defmodule Chess.Pos do
   - 'a' to 'h' maps to file 0 to 7.
   - '1' to '8' maps to rank 7 to 0 (since rank 8 is at the top/index 0).
   """
-  @spec from_notation(String.t()) :: %Chess.Pos{}
+  @spec from_notation(String.t()) :: t()
   def from_notation(<<file_char, rank_char>>) when file_char in ?a..?h and rank_char in ?1..?8 do
     file = file_char - ?a
     rank = 8 - (rank_char - ?0)
@@ -39,7 +40,7 @@ defmodule Chess.Pos do
   @doc """
   Converts a position to algebraic notation (e.g., "a1").
   """
-  @spec to_notation(%Chess.Pos{}) :: String.t()
+  @spec to_notation(t()) :: String.t()
   def to_notation(%Chess.Pos{rank: rank, file: file}) do
     file_char = <<?a + file>>
     rank_char = <<?0 + (8 - rank)>>
@@ -51,11 +52,11 @@ defmodule Chess.Pos do
   If the resulting position is out of bounds (not between 0 and 7 for both rank and file), it returns nil.
   """
   @spec get_plus(
-          pos :: %Chess.Pos{},
+          pos :: t(),
           rank_offset :: integer(),
           file_offset :: integer(),
           color :: Chess.color()
-        ) :: %Chess.Pos{} | nil
+        ) :: t() | nil
   def get_plus(pos, rank_offset, file_offset, color) do
     case color do
       :white -> get_plus(pos, -rank_offset, file_offset)

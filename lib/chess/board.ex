@@ -15,6 +15,7 @@ defmodule Chess.Board do
   history of moves.
   """
   use GenServer
+  alias Chess.Pos
 
   @impl true
   @spec init(any()) :: {:ok, []}
@@ -23,16 +24,31 @@ defmodule Chess.Board do
   end
 
   @impl true
-  @spec handle_call({:move, move()}, any(), list()) :: {:reply, :ok, list()}
-  def handle_call({:move, move}, _from, moves) do
-    # todo, validate. Probably `when is_valid_move(move, moves) do`
-    {:reply, :ok, moves ++ [move]}
+  @spec handle_call({:move, move()} | {:history}, any(), list()) ::
+          {:reply, :ok | {:error, any()} | list(), list()}
+  def handle_call({:move, move_str}, _from, moves) do
+    {board, last_board, color} = get_current_state(moves)
+
+    case Chess.Notation.parse(board, last_board, color, move_str) do
+      {:ok, _} -> {:reply, :ok, moves ++ [move_str]}
+      {:error, reason} -> {:reply, {:error, reason}, moves}
+    end
   end
 
   @impl true
-  @spec handle_call({:history}, any(), list()) :: {:reply, list(), list()}
   def handle_call({:history}, _from, moves) do
     {:reply, moves, moves}
+  end
+
+  defp get_current_state(moves) do
+    Enum.reduce(moves, {initial_board(), nil, :white}, fn move_str, {board, last_board, color} ->
+      {:ok, move} = Chess.Notation.parse(board, last_board, color, move_str)
+      {move.board, board, Chess.opposite_color(color)}
+    end)
+  end
+
+  defp initial_board do
+    from_shorthand!("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
   end
 
   @doc """
@@ -43,8 +59,8 @@ defmodule Chess.Board do
   """
   @spec as_unsafe_moved(
           board :: board(),
-          from :: %Chess.Pos{},
-          to :: %Chess.Pos{},
+          from :: Pos.t(),
+          to :: Pos.t(),
           new_piece :: Chess.Piece.t()
         ) :: Chess.Piece.new_state()
   def as_unsafe_moved(board, from, to, new_piece) do
@@ -63,7 +79,7 @@ defmodule Chess.Board do
   @doc """
   Returns the piece at the given position on the board, or nil if there is no piece at that position.
   """
-  @spec get_piece(board :: board(), pos :: %Chess.Pos{}) :: Chess.Piece.t() | nil
+  @spec get_piece(board :: board(), pos :: Pos.t()) :: Chess.Piece.t() | nil
   def get_piece(board, pos) do
     board
     |> Enum.at(pos.rank)
@@ -106,6 +122,62 @@ defmodule Chess.Board do
   end
 
   @doc """
+  Returns true if the square at `pos` is attacked by any piece of `by_color`.
+  """
+  @spec attacked?(board(), Pos.t(), Chess.color()) :: boolean()
+  def attacked?(board, pos, by_color) do
+    all_pieces_with_pos(board)
+    |> Enum.filter(fn {piece, _pos} -> match?({_type, ^by_color}, piece) end)
+    |> Enum.any?(fn {{type, color}, piece_pos} ->
+      piece_struct = to_piece_struct(type)
+      attacks = Chess.Piece.attacks(piece_struct, board, piece_pos, color)
+      pos in attacks
+    end)
+  end
+
+  @doc """
+  Returns a list of all legal moves for the given color.
+  """
+  @spec all_legal_moves(board(), board() | nil, Chess.color()) ::
+          list(%{from: Pos.t(), to: Pos.t(), board: board()})
+  def all_legal_moves(board, last_board, color) do
+    all_pieces_with_pos(board)
+    |> Enum.filter(fn {piece, _pos} -> match?({_type, ^color}, piece) end)
+    |> Enum.flat_map(fn {{type, _}, piece_pos} ->
+      piece_struct = to_piece_struct(type)
+
+      Chess.Piece.valid_moves(piece_struct, board, last_board, piece_pos, color)
+      |> Enum.map(fn {new_board, target_pos} ->
+        %{from: piece_pos, to: target_pos, board: new_board, piece_type: type}
+      end)
+    end)
+  end
+
+  defp all_pieces_with_pos(board) do
+    board
+    |> Enum.with_index()
+    |> Enum.flat_map(fn {rank_pieces, rank_idx} ->
+      rank_pieces
+      |> Enum.with_index()
+      |> Enum.map(fn {piece, file_idx} ->
+        {piece, Pos.new(rank_idx, file_idx)}
+      end)
+    end)
+    |> Enum.reject(fn {piece, _pos} -> is_nil(piece) end)
+  end
+
+  defp to_piece_struct(type) do
+    case type do
+      :pawn -> %Chess.Piece.Pawn{}
+      :rook -> %Chess.Piece.Rook{}
+      :knight -> %Chess.Piece.Knight{}
+      :bishop -> %Chess.Piece.Bishop{}
+      :queen -> %Chess.Piece.Queen{}
+      :king -> %Chess.Piece.King{}
+    end
+  end
+
+  @doc """
   Creates a board from a shorthand string representation.
 
   ## Examples
@@ -126,22 +198,18 @@ defmodule Chess.Board do
   def from_shorthand!(shorthand) do
     shorthand
     |> String.split("/")
-    |> Enum.map(fn rank ->
-      rank
+    |> Enum.map(fn rank_str ->
+      rank_str
       |> String.graphemes()
-      |> Enum.flat_map(fn char ->
-        case char do
-          "1" -> [nil]
-          "2" -> [nil, nil]
-          "3" -> [nil, nil, nil]
-          "4" -> [nil, nil, nil, nil]
-          "5" -> [nil, nil, nil, nil, nil]
-          "6" -> [nil, nil, nil, nil, nil, nil]
-          "7" -> [nil, nil, nil, nil, nil, nil, nil]
-          "8" -> [nil, nil, nil, nil, nil, nil, nil, nil]
-          _ -> [{char_to_piece!(char), color_of_piece!(char)}]
-        end
-      end)
+      |> Enum.flat_map(&parse_shorthand_char/1)
     end)
+  end
+
+  defp parse_shorthand_char(char) do
+    if char in ~w(1 2 3 4 5 6 7 8) do
+      List.duplicate(nil, String.to_integer(char))
+    else
+      [{char_to_piece!(char), color_of_piece!(char)}]
+    end
   end
 end
